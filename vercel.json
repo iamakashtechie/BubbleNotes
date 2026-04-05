@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "installCommand": "npm install",
+  "buildCommand": "npx expo export --platform web",
+  "outputDirectory": "dist",
+  "routes": [
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
+    }
+  ]
+}

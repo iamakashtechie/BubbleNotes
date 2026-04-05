@@ -8,6 +8,8 @@
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
+    "web:export": "expo export --platform web",
+    "deploy:vercel": "npx vercel --prod",
     "lint": "expo lint"
   },
   "dependencies": {
