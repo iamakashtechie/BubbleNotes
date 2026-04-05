@@ -1,20 +1,26 @@
 import {
   forceSimulation,
-  forceCenter,
   forceCollide,
   forceManyBody,
+  forceX,
+  forceY,
 } from "d3-force";
 
 export const runSimulation = (nodes, width, height) => {
+  const cx = width / 2;
+  const cy = height / 2;
+  
   const sim = forceSimulation(nodes)
-    .force("center", forceCenter(width / 2, height / 2).strength(0.1))
-    .force("collide", forceCollide().radius(d => d.radius + 12))
-    .force("charge", forceManyBody().strength(-35))
+    .force("x", forceX(cx).strength(0.1))
+    .force("y", forceY(cy).strength(0.1))
+    .force("collide", forceCollide().radius(d => d.radius + 0.2).iterations(12).strength(1))
+    .force("charge", forceManyBody().strength(4).distanceMin(1).distanceMax(70))
     .alpha(1)
-    .alphaDecay(0.03)
+    .alphaDecay(0.01)
+    .velocityDecay(0.32)
     .stop();
 
-  for (let i = 0; i < 250; i++) {
+  for (let i = 0; i < 500; i++) {
     sim.tick();
   }
 
