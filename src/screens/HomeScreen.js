@@ -5,6 +5,7 @@ import {
     ActivityIndicator,
     Alert,
     AppState,
+    FlatList,
     ScrollView,
     Text,
     TextInput,
@@ -42,6 +43,7 @@ const VIEW_MODE_STORAGE_KEY = "bubble_notes_view_mode_v1";
 const LIST_SORT_STORAGE_KEY = "bubble_notes_list_sort_v1";
 const CAMERA_STORAGE_KEY = "bubble_notes_camera_v1";
 const THEME_MODE_STORAGE_KEY = "bubble_notes_theme_mode_v1";
+const NOTES_PERSIST_DEBOUNCE_MS = 250;
 const DEFAULT_TAG = "General";
 const TAG_OPTIONS = ["General", "Ideas", "Work", "Study", "Personal"];
 const TAG_THEMES = {
@@ -106,6 +108,46 @@ const cloneNotesSnapshot = (items) => items.map((item) => ({
   ...item,
   tags: Array.isArray(item.tags) ? [...item.tags] : [DEFAULT_TAG],
 }));
+
+const areTagsEqual = (firstTags = [], secondTags = []) => {
+  if (firstTags.length !== secondTags.length) {
+    return false;
+  }
+
+  for (let index = 0; index < firstTags.length; index += 1) {
+    if (firstTags[index] !== secondTags[index]) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+const areNoteEntriesEqual = (first, second) => (
+  first.id === second.id
+  && first.title === second.title
+  && first.content === second.content
+  && first.color === second.color
+  && first.fill === second.fill
+  && first.radius === second.radius
+  && first.createdAt === second.createdAt
+  && first.updatedAt === second.updatedAt
+  && areTagsEqual(first.tags, second.tags)
+);
+
+const areNotesEqual = (first, second) => {
+  if (first.length !== second.length) {
+    return false;
+  }
+
+  for (let index = 0; index < first.length; index += 1) {
+    if (!areNoteEntriesEqual(first[index], second[index])) {
+      return false;
+    }
+  }
+
+  return true;
+};
 
 const formatUpdatedAtLabel = (iso) => {
   const date = new Date(iso);
@@ -351,7 +393,13 @@ export default function HomeScreen() {
       return;
     }
 
-    AsyncStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes)).catch(() => {});
+    const timeoutId = setTimeout(() => {
+      AsyncStorage.setItem(NOTES_STORAGE_KEY, JSON.stringify(notes)).catch(() => {});
+    }, NOTES_PERSIST_DEBOUNCE_MS);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
   }, [isNotesHydrated, notes]);
 
   const rerunSimulation = useCallback(() => {
@@ -414,7 +462,7 @@ export default function HomeScreen() {
 
         const normalizedNext = nextCandidate.map((note, index) => normalizeNoteModel(note, index));
 
-        if (JSON.stringify(previousSnapshot) === JSON.stringify(normalizedNext)) {
+        if (areNotesEqual(previousSnapshot, normalizedNext)) {
           return previous;
         }
 
@@ -1353,75 +1401,83 @@ export default function HomeScreen() {
               </Text>
             </View>
           ) : (
-            <ScrollView
+            <FlatList
+              data={filteredNotes}
+              keyExtractor={(note) => String(note.id)}
+              initialNumToRender={8}
+              maxToRenderPerBatch={10}
+              windowSize={7}
+              removeClippedSubviews
               contentContainerStyle={{ paddingBottom: 4 }}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
-            >
-              {filteredNotes.map((note) => (
-                <TouchableOpacity
-                  key={note.id}
-                  onPress={() => openNote(note)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Open ${note.title || "Untitled"}, tagged ${normalizeTags(note.tags)[0]}`}
-                  style={{
-                    borderRadius: 16,
-                    borderWidth: 1,
-                    borderColor: theme.border,
-                    backgroundColor: theme.surface,
-                    paddingHorizontal: 14,
-                    paddingVertical: 12,
-                    marginBottom: 10,
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: theme.textPrimary,
-                      fontSize: 16,
-                      fontWeight: "600",
-                      marginBottom: 4,
-                    }}
-                    numberOfLines={1}
-                  >
-                    {note.title || "Untitled"}
-                  </Text>
-                  <Text
-                    style={{ color: theme.textSecondary, lineHeight: 20 }}
-                    numberOfLines={2}
-                  >
-                    {note.content?.trim() || "No content yet."}
-                  </Text>
+              ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
+              renderItem={({ item: note }) => {
+                const primaryTag = note.tags?.[0] ?? DEFAULT_TAG;
 
-                  <View
+                return (
+                  <TouchableOpacity
+                    onPress={() => openNote(note)}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${note.title || "Untitled"}, tagged ${primaryTag}`}
                     style={{
-                      marginTop: 8,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "space-between",
+                      borderRadius: 16,
+                      borderWidth: 1,
+                      borderColor: theme.border,
+                      backgroundColor: theme.surface,
+                      paddingHorizontal: 14,
+                      paddingVertical: 12,
                     }}
                   >
+                    <Text
+                      style={{
+                        color: theme.textPrimary,
+                        fontSize: 16,
+                        fontWeight: "600",
+                        marginBottom: 4,
+                      }}
+                      numberOfLines={1}
+                    >
+                      {note.title || "Untitled"}
+                    </Text>
+                    <Text
+                      style={{ color: theme.textSecondary, lineHeight: 20 }}
+                      numberOfLines={2}
+                    >
+                      {note.content?.trim() || "No content yet."}
+                    </Text>
+
                     <View
                       style={{
-                        paddingHorizontal: 8,
-                        paddingVertical: 4,
-                        borderRadius: 999,
-                        borderWidth: 1,
-                        borderColor: note.color,
-                        backgroundColor: note.fill,
+                        marginTop: 8,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "space-between",
                       }}
                     >
-                      <Text style={{ color: theme.textPrimary, fontSize: 11, fontWeight: "600" }}>
-                        {normalizeTags(note.tags)[0]}
+                      <View
+                        style={{
+                          paddingHorizontal: 8,
+                          paddingVertical: 4,
+                          borderRadius: 999,
+                          borderWidth: 1,
+                          borderColor: note.color,
+                          backgroundColor: note.fill,
+                        }}
+                      >
+                        <Text style={{ color: theme.textPrimary, fontSize: 11, fontWeight: "600" }}>
+                          {primaryTag}
+                        </Text>
+                      </View>
+
+                      <Text style={{ color: theme.textMuted, fontSize: 11 }} numberOfLines={1}>
+                        {formatUpdatedAtLabel(note.updatedAt)}
                       </Text>
                     </View>
-
-                    <Text style={{ color: theme.textMuted, fontSize: 11 }} numberOfLines={1}>
-                      {formatUpdatedAtLabel(note.updatedAt)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
+                  </TouchableOpacity>
+                );
+              }}
+            />
           )}
         </View>
       ) : (

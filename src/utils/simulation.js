@@ -1,12 +1,14 @@
 import {
-  forceCollide,
-  forceManyBody,
-  forceSimulation,
-  forceX,
-  forceY,
+    forceCollide,
+    forceManyBody,
+    forceSimulation,
+    forceX,
+    forceY,
 } from "d3-force";
 
 export const runSimulation = (nodes, viewportWidth, viewportHeight) => {
+  const nodeCount = nodes.length;
+  const tickCount = Math.max(120, Math.min(420, 120 + nodeCount * 16));
 
   const sim = forceSimulation(nodes)
     .force("x", forceX(0).strength(0.08))
@@ -18,7 +20,7 @@ export const runSimulation = (nodes, viewportWidth, viewportHeight) => {
     .velocityDecay(0.32)
     .stop();
 
-  for (let i = 0; i < 600; i++) {
+  for (let i = 0; i < tickCount; i++) {
     sim.tick();
   }
 
