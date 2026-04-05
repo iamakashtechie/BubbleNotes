@@ -2,35 +2,35 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Haptics from "expo-haptics";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Alert,
-  AppState,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-  useColorScheme,
-  useWindowDimensions,
+    ActivityIndicator,
+    Alert,
+    AppState,
+    ScrollView,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+    useColorScheme,
+    useWindowDimensions,
 } from "react-native";
 import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import Animated, {
-  runOnJS,
-  useAnimatedReaction,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
+    runOnJS,
+    useAnimatedReaction,
+    useAnimatedStyle,
+    useSharedValue,
+    withTiming,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BubbleCanvas from "../components/BubbleCanvas";
 import { runSimulation } from "../utils/simulation";
 import {
-  APPEARANCE_MODE_DARK,
-  APPEARANCE_MODE_LABELS,
-  APPEARANCE_MODE_LIGHT,
-  APPEARANCE_MODE_SYSTEM,
-  getThemeForScheme,
-  isValidAppearanceMode,
+    APPEARANCE_MODE_DARK,
+    APPEARANCE_MODE_LABELS,
+    APPEARANCE_MODE_LIGHT,
+    APPEARANCE_MODE_SYSTEM,
+    getThemeForScheme,
+    isValidAppearanceMode,
 } from "../utils/theme";
 import NoteScreen from "./NoteScreen";
 
@@ -1119,8 +1119,6 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.background }}>
       <View
-        accessible
-        accessibilityLabel={`Notes ${notes.length}. Zoom ${zoomPercent} percent.`}
         style={{
           position: "absolute",
           top: topInset,
@@ -1129,130 +1127,128 @@ export default function HomeScreen() {
           zIndex: 40,
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
+          justifyContent: "flex-start",
         }}
       >
         <View
           style={{
+            width: "100%",
             flexDirection: "row",
             alignItems: "center",
-            gap: 10,
-            paddingHorizontal: 12,
-            paddingVertical: 9,
-            borderRadius: 18,
-            backgroundColor: theme.surface,
-            borderWidth: 1,
-            borderColor: theme.hintBorder,
+            justifyContent: "space-between",
           }}
         >
-          <Text style={{ color: theme.textPrimary, fontSize: 12 }}>Notes {notes.length}</Text>
-          <Text style={{ color: theme.accentText, fontSize: 12 }}>{zoomPercent}%</Text>
-        </View>
-
-        <View style={{ maxWidth: width * 0.62 }}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{
-              flexDirection: "row",
+          <TouchableOpacity
+            onPress={toggleViewMode}
+            accessibilityRole="button"
+            accessibilityLabel={isListMode ? "Switch to canvas view" : "Switch to list view"}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 9,
+              borderRadius: 16,
+              minWidth: 62,
               alignItems: "center",
-              gap: 8,
-              paddingRight: 2,
+              backgroundColor: theme.surfaceStrong,
+              borderWidth: 1,
+              borderColor: theme.border,
             }}
           >
-            <TouchableOpacity
-              onPress={undoNotes}
-              disabled={!historyState.canUndo}
-              accessibilityRole="button"
-              accessibilityLabel="Undo last change"
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 9,
-                borderRadius: 16,
-                opacity: historyState.canUndo ? 1 : 0.45,
-                backgroundColor: theme.surfaceStrong,
-                borderWidth: 1,
-                borderColor: theme.border,
-              }}
-            >
-              <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: "600" }}>Undo</Text>
-            </TouchableOpacity>
+            <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: "600" }}>
+              {isListMode ? "Map" : "List"}
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={redoNotes}
-              disabled={!historyState.canRedo}
-              accessibilityRole="button"
-              accessibilityLabel="Redo change"
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 9,
-                borderRadius: 16,
-                opacity: historyState.canRedo ? 1 : 0.45,
-                backgroundColor: theme.surfaceStrong,
-                borderWidth: 1,
-                borderColor: theme.border,
-              }}
-            >
-              <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: "600" }}>Redo</Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={openAppearancePicker}
+            accessibilityRole="button"
+            accessibilityLabel="Change app appearance"
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 9,
+              borderRadius: 16,
+              minWidth: 70,
+              alignItems: "center",
+              backgroundColor: theme.surfaceStrong,
+              borderWidth: 1,
+              borderColor: theme.border,
+            }}
+          >
+            <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: "600" }}>
+              {appearanceLabel}
+            </Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={toggleViewMode}
-              accessibilityRole="button"
-              accessibilityLabel={isListMode ? "Switch to canvas view" : "Switch to list view"}
-              style={{
-                paddingHorizontal: 14,
-                paddingVertical: 9,
-                borderRadius: 16,
-                backgroundColor: theme.surfaceStrong,
-                borderWidth: 1,
-                borderColor: theme.border,
-              }}
-            >
-              <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: "600" }}>
-                {isListMode ? "Map" : "List"}
-              </Text>
-            </TouchableOpacity>
+          <TouchableOpacity
+            onPress={undoNotes}
+            disabled={!historyState.canUndo}
+            accessibilityRole="button"
+            accessibilityLabel="Undo last change"
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 9,
+              borderRadius: 16,
+              minWidth: 62,
+              alignItems: "center",
+              opacity: historyState.canUndo ? 1 : 0.45,
+              backgroundColor: theme.surfaceStrong,
+              borderWidth: 1,
+              borderColor: theme.border,
+            }}
+          >
+            <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: "600" }}>Undo</Text>
+          </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={openAppearancePicker}
-              accessibilityRole="button"
-              accessibilityLabel="Change app appearance"
-              style={{
-                paddingHorizontal: 12,
-                paddingVertical: 9,
-                borderRadius: 16,
-                backgroundColor: theme.surfaceStrong,
-                borderWidth: 1,
-                borderColor: theme.border,
-              }}
-            >
-              <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: "600" }}>
-                {appearanceLabel}
-              </Text>
-            </TouchableOpacity>
-
-            {!isListMode ? (
-              <TouchableOpacity
-                onPress={() => resetCamera(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Recenter canvas"
-                accessibilityHint="Resets zoom and moves bubbles back to center"
-                style={{
-                  paddingHorizontal: 14,
-                  paddingVertical: 9,
-                  borderRadius: 16,
-                  backgroundColor: theme.surfaceStrong,
-                  borderWidth: 1,
-                  borderColor: theme.border,
-                }}
-              >
-                <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: "600" }}>Home</Text>
-              </TouchableOpacity>
-            ) : null}
-          </ScrollView>
+          <TouchableOpacity
+            onPress={redoNotes}
+            disabled={!historyState.canRedo}
+            accessibilityRole="button"
+            accessibilityLabel="Redo change"
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 9,
+              borderRadius: 16,
+              minWidth: 62,
+              alignItems: "center",
+              opacity: historyState.canRedo ? 1 : 0.45,
+              backgroundColor: theme.surfaceStrong,
+              borderWidth: 1,
+              borderColor: theme.border,
+            }}
+          >
+            <Text style={{ color: theme.textPrimary, fontSize: 12, fontWeight: "600" }}>Redo</Text>
+          </TouchableOpacity>
         </View>
       </View>
+
+      <TouchableOpacity
+        onPress={!isListMode ? () => resetCamera(true) : undefined}
+        disabled={isListMode}
+        accessibilityRole="button"
+        accessibilityLabel={isListMode
+          ? `Notes ${notes.length}. Zoom ${zoomPercent} percent.`
+          : `Notes ${notes.length}. Zoom ${zoomPercent} percent. Tap to recenter canvas.`}
+        accessibilityHint={isListMode ? undefined : "Resets zoom and moves bubbles back to center"}
+        accessibilityState={{ disabled: isListMode }}
+        style={{
+          position: "absolute",
+          left: 14,
+          bottom: fabBottom,
+          zIndex: 41,
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          paddingHorizontal: 12,
+          paddingVertical: 9,
+          borderRadius: 18,
+          backgroundColor: theme.surface,
+          borderWidth: 1,
+          borderColor: theme.hintBorder,
+          opacity: isListMode ? 0.78 : 1,
+        }}
+      >
+        <Text style={{ color: theme.textPrimary, fontSize: 12 }}>Notes {notes.length}</Text>
+        <Text style={{ color: theme.accentText, fontSize: 12 }}>{zoomPercent}%</Text>
+      </TouchableOpacity>
 
       {isListMode ? (
         <View
